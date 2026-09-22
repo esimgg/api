@@ -10,7 +10,9 @@ https://api.esim.gg/api
 
 ## Authentication
 
-Create, list, and revoke keys from the esim.gg dashboard. A key is shown only when it is created. Send it as a bearer token:
+Sign in to esim.gg, then open **https://esim.gg/settings/api-keys** directly to create, list, or revoke keys. The page is intentionally not linked from website navigation or settings; this documentation is where to find it.
+
+Enter a name and create your key. Copy the secret immediately: it is shown only once. Send it as a bearer token:
 
 ```http
 Authorization: Bearer <YOUR_API_KEY>
@@ -148,12 +150,28 @@ curl -X POST 'https://api.esim.gg/api/line/nickname' \
 
 Ownership transfer is irreversible and has no recipient acceptance step. The recipient must already have an esim.gg account. The authenticated owner initiates the transfer.
 
+Send exactly one of `recipient_email` or `recipient_account_id`. Email transfers succeed only when the email identifies exactly one account. If multiple accounts share that email, the transfer fails without changing ownership; use the recipient's account ID instead. Do not send both fields.
+
+To find an account ID, the recipient signs in and long-presses their user/email area in the website header or sidebar. They can then copy the displayed account ID and share it with the sender. Verify it with the intended recipient before transferring.
+
+Transfer by email:
+
 ```bash
 curl -X POST 'https://api.esim.gg/api/line/transfer-ownership' \
   -H 'Authorization: Bearer <YOUR_API_KEY>' \
   -H 'X-MSISDN: 372XXXXXXXX' \
   -H 'Content-Type: application/json' \
   -d '{"recipient_email":"recipient@example.invalid"}'
+```
+
+Transfer by account ID:
+
+```bash
+curl -X POST 'https://api.esim.gg/api/line/transfer-ownership' \
+  -H 'Authorization: Bearer <YOUR_API_KEY>' \
+  -H 'X-MSISDN: 372XXXXXXXX' \
+  -H 'Content-Type: application/json' \
+  -d '{"recipient_account_id":"<RECIPIENT_ACCOUNT_ID>"}'
 ```
 
 A successful response includes `success: true` and `transfer_details`, including the line number, previous/new owner identifiers, recipient email, transfer time, and line information.
