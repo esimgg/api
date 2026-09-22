@@ -1,7 +1,5 @@
 # esim.gg Customer API
 
-> **Availability:** the documented customer API-key features require rollout. Publishing these docs does not confirm they are live.
-
 Base URL:
 
 ```text
@@ -31,13 +29,13 @@ Use placeholders in examples; never put a key in source control or client-side c
 | Method | Endpoint | Purpose |
 |---|---|---|
 | GET | `/wallet/balance?currency=eur` | Read wallet balance |
-| POST | `/number/search` | Search zero-price numbers (rate limited) |
+| POST | `/number/search` | Search available numbers (rate limited) |
 | POST | `/checkout/new_line` | Order a standard global number from the wallet |
 | GET | `/line/all` | List your lines |
 | GET | `/line/get_line` | Get the line selected by `X-MSISDN` |
 | GET, POST | `/line/status` | Read or change service status |
 | POST | `/line/nickname` | Set line nickname |
-| POST | `/line/transfer-ownership` | Transfer a line to another account |
+| POST | `/line/transfer_ownership` | Transfer a line to another account |
 | POST | `/line/balance_transfer` | Transfer airtime credit between lines |
 
 ## Wallet balance
@@ -55,15 +53,15 @@ Response:
 
 The balance is wallet credit. A number being zero-price does not provide free airtime or card credit.
 
-## Search zero-price numbers
+## Search available numbers
 
-Search is limited to zero-price numbers only. It is rate limited to **10 requests per minute per user**, across all of that user’s keys, in addition to the existing IP-based limit.
+Search is rate limited to **10 requests per minute per user**, across all of that user’s keys, in addition to the existing IP-based limit. By default, search includes both paid and zero-price numbers. Set the optional boolean `zero_price_only` field to `true` to return only numbers whose number price is zero.
 
 ```bash
 curl -X POST 'https://api.esim.gg/api/number/search' \
   -H 'Authorization: Bearer <YOUR_API_KEY>' \
   -H 'Content-Type: application/json' \
-  -d '{"search":"37255","type":"global"}'
+  -d '{"search":"37255","type":"global","zero_price_only":true}'
 ```
 
 Search results use this format (the number below is a placeholder):
@@ -72,7 +70,7 @@ Search results use this format (the number below is a placeholder):
 {"success":true,"search":[{"msisdn":"372XXXXXXXX","price":0.0}]}
 ```
 
-`search` is an optional digit pattern; `type` is `global` or `asia`. At most 12 results are returned. All customer-key results have zero number price. This does not waive activation, package, or airtime charges. A result is not a reservation: check the order response.
+`search` is an optional digit pattern; `type` is `global` or `asia`; and `zero_price_only` is an optional boolean that defaults to `false`. At most 12 results are returned. When `zero_price_only` is `true`, the zero-price filter is applied before the result limit and the search bypasses cached results. A zero number price does not waive activation, package, or airtime charges. A result is not a reservation: check the order response.
 
 ## Order a number
 
@@ -85,7 +83,7 @@ curl -X POST 'https://api.esim.gg/api/checkout/new_line' \
   -d '{"msisdn":"372XXXXXXXX","payment_method":"wallet","recharge_amount":"2.00"}'
 ```
 
-`recharge_amount` is required and must be at least `0.02`. The `msisdn` must be a standard global number returned by search.
+`recharge_amount` is required. The standard minimum is `1.00` EUR, although an account-specific minimum may apply. The `msisdn` must be a standard global number returned by search.
 
 If an order does not return a final line result, do not blindly retry. First call `/line/all` and reconcile line ownership; a retry could create a second order.
 
@@ -157,7 +155,7 @@ To find an account ID, the recipient signs in and long-presses their user/email 
 Transfer by email:
 
 ```bash
-curl -X POST 'https://api.esim.gg/api/line/transfer-ownership' \
+curl -X POST 'https://api.esim.gg/api/line/transfer_ownership' \
   -H 'Authorization: Bearer <YOUR_API_KEY>' \
   -H 'X-MSISDN: 372XXXXXXXX' \
   -H 'Content-Type: application/json' \
@@ -167,7 +165,7 @@ curl -X POST 'https://api.esim.gg/api/line/transfer-ownership' \
 Transfer by account ID:
 
 ```bash
-curl -X POST 'https://api.esim.gg/api/line/transfer-ownership' \
+curl -X POST 'https://api.esim.gg/api/line/transfer_ownership' \
   -H 'Authorization: Bearer <YOUR_API_KEY>' \
   -H 'X-MSISDN: 372XXXXXXXX' \
   -H 'Content-Type: application/json' \
