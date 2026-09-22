@@ -31,6 +31,7 @@ Use placeholders in examples; never put a key in source control or client-side c
 | GET | `/wallet/balance?currency=eur` | Read wallet balance |
 | POST | `/number/search` | Search available numbers (rate limited) |
 | POST | `/checkout/new_line` | Order a standard global number from the wallet |
+| POST | `/checkout/recharge` | Recharge an owned number from the wallet |
 | GET | `/line/all` | List your lines |
 | GET | `/line/get_line` | Get the line selected by `X-MSISDN` |
 | GET, POST | `/line/status` | Read or change service status |
@@ -86,6 +87,20 @@ curl -X POST 'https://api.esim.gg/api/checkout/new_line' \
 `recharge_amount` is required. The standard minimum is `1.00` EUR, although an account-specific minimum may apply. The `msisdn` must be a standard global number returned by search.
 
 If an order does not return a final line result, do not blindly retry. First call `/line/all` and reconcile line ownership; a retry could create a second order.
+
+## Recharge an owned number
+
+Add airtime to a number you own using account wallet credit. API keys may use only `wallet` for this endpoint. `X-MSISDN` is required and must match the `msisdn` in the JSON body.
+
+```bash
+curl -X POST 'https://api.esim.gg/api/checkout/recharge' \
+  -H 'Authorization: Bearer <YOUR_API_KEY>' \
+  -H 'X-MSISDN: 372XXXXXXXX' \
+  -H 'Content-Type: application/json' \
+  -d '{"msisdn":"372XXXXXXXX","payment_method":"wallet","recharge_amount":"2.00"}'
+```
+
+`recharge_amount` must be a finite, positive EUR amount. A successful wallet response includes `success: true`, `payment_amount`, `vat_amount`, and `redirect_url`. Wallet recharges are processed immediately, but treat a timeout or non-final response as uncertain: check the line balance before retrying to avoid duplicate wallet charges.
 
 ## List and read lines
 
